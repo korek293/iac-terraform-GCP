@@ -1,0 +1,1 @@
+ssh_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINtLq49Hcdqbbn8bhhp8ADWyzaAIm2i10s/Q2xk+Q5hu toxic@LAPTOP-3LCO2JST"

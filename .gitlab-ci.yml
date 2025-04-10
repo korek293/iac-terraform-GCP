@@ -1,0 +1,47 @@
+default:  
+  image: 
+    name: hashicorp/terraform:latest
+    entrypoint: [""]
+
+variables:
+  TERRAFORM_KEY: dXBzUW5yYk9oRW9hYWx4alJabXRWM1NwWUxabmZXTXAK
+
+Check cloud task:
+  stage:  build
+  before_script:
+    - apk add bash jq grep libc6-compat coreutils
+    - export PROCTOR_CONFIG_KEY=$(echo $TERRAFORM_KEY | base64 -d)
+  script:
+    - TERRAFORM_PROVIDER=$(find ./ -maxdepth 2 -name root.tf | xargs grep 'provider.*"' | cut -d "\"" -f2 | sort -u)
+    - cp .ci/${TERRAFORM_PROVIDER}/mock.state base/terraform.tfstate
+    - cp .ci/${TERRAFORM_PROVIDER}/config ./
+    - cp .ci/proctor ./
+    - ./proctor --config=config --config.encrypted=true
+  rules:
+    - changes:
+        - base/*
+        - compute/*
+  allow_failure:
+    exit_codes:
+      - 1
+      - 123
+
+Check non cloud task:
+  stage:  build
+  before_script:
+    - apk add bash jq grep libc6-compat coreutils
+    - export PROCTOR_CONFIG_KEY=$(echo $TERRAFORM_KEY | base64 -d)
+  script:
+    - TERRAFORM_PROVIDER=$(find ./non_cloud_tasks/ -name root.tf | xargs grep 'provider.*"' | cut -d "\"" -f2 | sort -u)
+    - cp .ci/${TERRAFORM_PROVIDER}/mock.state non_cloud_tasks/${TERRAFORM_PROVIDER}/base/terraform.tfstate
+    - cp .ci/${TERRAFORM_PROVIDER}/config non_cloud_tasks/${TERRAFORM_PROVIDER}/
+    - cp .ci/proctor non_cloud_tasks/${TERRAFORM_PROVIDER}/
+    - cd non_cloud_tasks/${TERRAFORM_PROVIDER}/; ./proctor --config=config --config.encrypted=true
+  rules:
+    - changes:
+        - non_cloud_tasks/github/base/*
+        - non_cloud_tasks/github/repos/*
+  allow_failure:
+    exit_codes:
+      - 1
+      - 123
